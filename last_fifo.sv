@@ -33,7 +33,6 @@ module last_fifo
         if(~rst_n)
             ext_rd_pointer <= '0;
         else if (pop) begin
-            internal_memmory[rd_pointer] <= 1'b0;
             ext_rd_pointer <= ext_rd_pointer + 1'b1;
         end
     end
@@ -48,8 +47,13 @@ module last_fifo
     always_ff @(posedge clk or negedge rst_n) begin
         if(~rst_n)
             internal_memmory <= '0;
-        else if (push)
+				
+        else begin 
+		  if (push)
             internal_memmory[wr_pointer] <= s_data_i;
+		  if(pop)
+			   internal_memmory[rd_pointer] <= 1'b0;
+			end
     end
 
     assign read_data = internal_memmory[rd_pointer];

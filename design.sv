@@ -16,9 +16,9 @@ module stream_upsize #(
     input logic m_ready_i
 );
     typedef enum logic[1:0] {
-        NEW_CYCLE,
-        LOAD_TILL_LAST,
-        KEEP_STATE
+        NEW_CYCLE = 2'b00,
+        LOAD_TILL_LAST = 2'b01,
+        KEEP_STATE = 2'b10
     } State;
     State state, next_state;
     localparam STATES_NUMBER = $clog2(T_DATA_RATIO);
@@ -36,6 +36,8 @@ module stream_upsize #(
     logic keep_go;
     logic [T_DATA_RATIO-1:0] temp;
     logic [T_DATA_RATIO:0] keep_to_FIFO;
+	 logic any_up;
+	 logic last_from_FIFO;
     assign keep_to_FIFO = m_keep_FIFO - 1'b1;
     genvar i;
     
@@ -95,16 +97,20 @@ module stream_upsize #(
     else
         state <= next_state;
 
-    always_ff @(posedge clk or negedge rst_n)
-    if(~rst_n | state == NEW_CYCLE| num == T_DATA_RATIO-1)
+    always_ff @(posedge clk or negedge rst_n) 
+    if(~rst_n)
         num <= 1;
+	 else if ((state == NEW_CYCLE) | (num == T_DATA_RATIO-1))
+		  num <= 1;
     else if (state == LOAD_TILL_LAST) begin
         num <= num + 1'b1;
     end
 
     always_ff@(posedge clk or negedge rst_n)
-    if(~rst_n | state == KEEP_STATE)
+    if(~rst_n)
         m_keep_FIFO <= 1'b1;
+	 else if (state == KEEP_STATE)
+		  m_keep_FIFO <= 1'b1;
     else if(keep_go)
         m_keep_FIFO <= m_keep_FIFO << 1;
 

@@ -43,7 +43,7 @@ module fifo
             ext_wr_pointer <= ext_wr_pointer + 1'b1;
     end
 
-    always_ff @(posedge clk or negedge rst_n) begin
+    always_ff @(posedge clk) begin
         if (push)
             internal_memmory[wr_pointer] <= s_data_i;
     end

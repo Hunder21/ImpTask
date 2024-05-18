@@ -11,8 +11,13 @@ logic [1:0] m_keep_o;
 logic m_last_o;
 logic m_valid_o;
 logic m_ready_i;
+int i = 0;
+event ev;
 
-
+logic [31:0] firstQ [$];
+logic [31:0] secondQ [$];
+logic lastFQ [$];
+logic lastSQ [$];
 
 stream_upsize #(.T_DATA_WIDTH(32), .T_DATA_RATIO(2)) DUT
 (
@@ -46,85 +51,63 @@ initial begin
     #(CLK_PERIOD/2) clk = ~ clk;
     end
 end
-
+initial begin
+    #5;
+    wait(rst_n);
+    forever begin
+    wait(s_valid_i & s_ready_o === 1);
+    @(posedge clk);
+    firstQ.push_front(s_data_i);
+    lastFQ.push_front(s_last_i);
+    if(~s_last_i) begin
+    wait(s_valid_i & s_ready_o === 1);
+    @(posedge clk);
+    secondQ.push_front(s_data_i);
+    lastSQ.push_front(s_last_i);
+    end
+    end
+end
 initial begin
     #5;
     wait(rst_n);
     repeat(20)
     begin
         @(posedge clk);
-        s_data_i <= $urandom_range(0, 100);
-        s_valid_i <= $urandom();
-        s_last_i <= $urandom();
+        s_data_i <= i;
+        s_valid_i <= (i % 2 == 0);
+        s_last_i <= (i % 3 == 0);
         m_ready_i <= 1;
         #1;
         while(~s_ready_o) begin
         @(posedge clk);
         #1;
         end
+        i++;
     end
+    $display("SUCCESS");
     $stop();
-    // #5;
-    // wait(rst_n);
-    // @(posedge clk);
-    // s_data_i <= 0;
-    // s_valid_i <= 1;
-    // s_last_i <= 0;
-    // m_ready_i <= 1;
-    // #1;
-    // while(~s_ready_o) begin
-    // @(posedge clk);
-    // #1;
-    // end
-    // @(posedge clk);
-    // s_data_i <= 1;
-    // s_valid_i <= 1;
-    // s_last_i <= 0;
-    // m_ready_i <= 1;
-    // #1;
-    // while(~s_ready_o) begin
-    // @(posedge clk);
-    // #1;
-    // end
-    // @(posedge clk);
-    // s_data_i <= 2;
-    // s_valid_i <= 1;
-    // s_last_i <= 1;
-    // m_ready_i <= 1;
-    // #1;
-    // while(~s_ready_o) begin
-    // @(posedge clk);
-    // #1;
-    // end
-    // @(posedge clk);
-    // s_data_i <= 10;
-    // s_valid_i <= 1;
-    // s_last_i <= 0;
-    // m_ready_i <= 1;
-    // #1;
-    // while(~s_ready_o) begin
-    // @(posedge clk);
-    // #1;
-    // end
-    // @(posedge clk);
-    // s_data_i <= 11;
-    // s_valid_i <= 1;
-    // s_last_i <= 1;
-    // m_ready_i <= 1;
-    // #1;
-    // while(~s_ready_o) begin
-    // @(posedge clk);
-    // #1;
-    // end
-    // $stop();
 end
 
-// initial begin
-//     repeat(100)begin
-//     @(posedge clk);
-//     end
-//     $display("END");
-//     $stop();
-// end
+initial begin
+    #5;
+    wait(rst_n);
+    forever begin
+        wait(m_valid_o & m_ready_i);
+        if(m_keep_o[0])
+        begin
+            if(firstQ.pop_back() !== m_data_o[0]) begin
+                $display("VALUE ERROR");
+                $stop();
+            end
+        end
+        if(m_keep_o[1])
+        begin
+            if(secondQ.pop_back() !== m_data_o[1]) begin
+                $display("ERROR");
+                $stop();
+            end
+        end
+    end
+end
 
 endmodule 

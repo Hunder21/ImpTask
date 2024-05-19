@@ -13,12 +13,13 @@ logic m_valid_o;
 logic m_ready_i;
 int i = 0;
 event ev;
+logic [31:0] temp1, temp2;
 
 logic [31:0] firstQ [$];
 logic [31:0] secondQ [$];
 logic lastFQ [$];
 logic lastSQ [$];
-
+logic last1, last2;
 stream_upsize #(.T_DATA_WIDTH(32), .T_DATA_RATIO(2)) DUT
 (
     .clk(clk),
@@ -55,27 +56,32 @@ initial begin
     #5;
     wait(rst_n);
     forever begin
-    wait(s_valid_i & s_ready_o === 1);
+    wait(s_valid_i & s_ready_o);
     @(posedge clk);
     firstQ.push_front(s_data_i);
     lastFQ.push_front(s_last_i);
     if(~s_last_i) begin
-    wait(s_valid_i & s_ready_o === 1);
+    @(posedge clk);
+    wait(s_valid_i & s_ready_o);
     @(posedge clk);
     secondQ.push_front(s_data_i);
     lastSQ.push_front(s_last_i);
+    @(posedge clk);
+    end
+    else begin
+        @(posedge clk);
     end
     end
 end
 initial begin
     #5;
     wait(rst_n);
-    repeat(20)
+    repeat(100)
     begin
         @(posedge clk);
         s_data_i <= i;
         s_valid_i <= (i % 2 == 0);
-        s_last_i <= (i % 3 == 0);
+        s_last_i <= (i % 8 == 0);
         m_ready_i <= 1;
         #1;
         while(~s_ready_o) begin
@@ -84,7 +90,7 @@ initial begin
         end
         i++;
     end
-    $display("SUCCESS");
+    $display("PASSED");
     $stop();
 end
 
@@ -95,18 +101,33 @@ initial begin
         wait(m_valid_o & m_ready_i);
         if(m_keep_o[0])
         begin
-            if(firstQ.pop_back() !== m_data_o[0]) begin
-                $display("VALUE ERROR");
+            temp1 = firstQ.pop_back();
+            last1 = lastFQ.pop_back();
+            if(temp1 !== m_data_o[0]) begin
+                $display("VALUE ERROR %0d != %0d", temp1, m_data_o[0]);
                 $stop();
             end
         end
         if(m_keep_o[1])
         begin
-            if(secondQ.pop_back() !== m_data_o[1]) begin
-                $display("ERROR");
+            temp2 = secondQ.pop_back() ;
+            last2 = lastSQ.pop_back();
+            if(temp2 !== m_data_o[1]) begin
+                $display("VALUE ERROR %0d != %0d", temp2, m_data_o[1]);
                 $stop();
             end
         end
+        else begin
+            temp2 = 'x;
+            last2 = 1'b0;
+        end
+        if((last1 | last2) !== m_last_o) begin
+            $display("LAST ERROR %0d != %0d", last1 | last2, m_last_o);
+            $stop();
+        end
+        $display("SUCCESS! REAL: {%0d, %0d} EXPECTED: {%0d, %0d}; LAST REAL: %0d EXPECTED: %0d", m_data_o[0], m_data_o[1], temp1, temp2, m_last_o, last1|last2);
+        @(posedge clk);
+        @(posedge clk);
     end
 end
 

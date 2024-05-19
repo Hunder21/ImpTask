@@ -7,17 +7,12 @@ module last_fifo
     input logic clk,
     input logic rst_n,
     input logic s_data_i,
-    // input logic s_last_i,
-    // input logic s_valid_i,
     input logic push, 
     input logic pop,
-    // output logic fifo_ready,
     
     output logic full,
     output logic empty,
-
     output logic read_data,
-    // output logic keep_o
     output logic any_up
 );
 

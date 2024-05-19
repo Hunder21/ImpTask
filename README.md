@@ -11,4 +11,4 @@ KEEP_LAST - загрузка keep в keep_fifo. Сигнал keep формиру
 Избавление от последнего состояния автомата увеличит latency, т.к в этом состоянии запрещена загрузка. Реализация ограничена размером буфера FIFO.
 Для last_fifo и keep_fifo сигналы empty и full не используются.
 
-Testbench рассматривает случай T_DATA_WIDTH = 32, T_DATA_RATION = 2.
+Testbench рассматривает случай T_DATA_WIDTH = 32, T_DATA_RATIO = 2.

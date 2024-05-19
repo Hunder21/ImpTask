@@ -36,8 +36,8 @@ module stream_upsize #(
     logic keep_go;
     logic [T_DATA_RATIO-1:0] temp;
     logic [T_DATA_RATIO:0] keep_to_FIFO;
-	 logic any_up;
-	 logic last_from_FIFO;
+	logic any_up;
+	logic last_from_FIFO;
     assign keep_to_FIFO = m_keep_FIFO - 1'b1;
     genvar i;
     
@@ -83,7 +83,7 @@ module stream_upsize #(
         .empty(empty_keep),
         .read_data(m_keep_o)
     );
-    assign m_valid_o = any_up & (state != KEEP_STATE);
+    assign m_valid_o = ~|empty & any_up & (state != KEEP_STATE);
     assign pop = {T_DATA_RATIO{any_up & (state != KEEP_STATE) & m_ready_i}};
     assign pop_last = any_up & (state != KEEP_STATE) & m_ready_i;
     assign m_last_o = last_from_FIFO;
@@ -100,7 +100,7 @@ module stream_upsize #(
     always_ff @(posedge clk or negedge rst_n) 
     if(~rst_n)
         num <= 1;
-	 else if ((state == NEW_CYCLE) | (num == T_DATA_RATIO-1))
+	else if ((state == NEW_CYCLE) | (num == T_DATA_RATIO-1))
 		  num <= 1;
     else if (state == LOAD_TILL_LAST) begin
         num <= num + 1'b1;
@@ -109,7 +109,7 @@ module stream_upsize #(
     always_ff@(posedge clk or negedge rst_n)
     if(~rst_n)
         m_keep_FIFO <= 1'b1;
-	 else if (state == KEEP_STATE)
+	else if (state == KEEP_STATE)
 		  m_keep_FIFO <= 1'b1;
     else if(keep_go)
         m_keep_FIFO <= m_keep_FIFO << 1;
@@ -155,7 +155,7 @@ module stream_upsize #(
                 if(s_valid_i & s_ready_o & s_last_i)
                     begin
                         temp[num] = 1'b1;
-                        push = (~temp ^ (temp-1)) + temp; 
+                        push = (~temp ^ (temp-1'b1)) + temp; 
                         data_to_FIFOS[num] = s_data_i;
                         next_state = KEEP_STATE;
                         push_last = 1'b1;

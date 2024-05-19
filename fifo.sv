@@ -8,17 +8,12 @@ module fifo
     input logic clk,
     input logic rst_n,
     input logic [T_DATA_WIDTH-1:0] s_data_i,
-    // input logic s_last_i,
-    // input logic s_valid_i,
     input logic push, 
     input logic pop,
-    // output logic fifo_ready,
     
     output logic full,
     output logic empty,
-
     output logic [T_DATA_WIDTH-1:0] read_data
-    // output logic keep_o
 );
 
     logic [T_DATA_WIDTH-1:0] internal_memmory [DATA_DEPTH];
